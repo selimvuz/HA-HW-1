@@ -4,14 +4,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer, AutoModel
 import torch
 
-# Hugging Face BERT modelini yükle
-tokenizer = AutoTokenizer.from_pretrained(
-    "ytu-ce-cosmos/turkish-small-bert-uncased")
-model = AutoModel.from_pretrained("ytu-ce-cosmos/turkish-small-bert-uncased")
+# Hugging Face modelini yükle
+tokenizer = AutoTokenizer.from_pretrained("ytu-ce-cosmos/turkish-gpt2-large")
+model = AutoModel.from_pretrained("ytu-ce-cosmos/turkish-gpt2-large")
 
 # CUDA kullanılabilirse modeli GPU'ya taşı
 if torch.cuda.is_available():
     model = model.cuda()
+
+# Tokenizer için padding token ayarla
+tokenizer.pad_token = tokenizer.eos_token
 
 def get_vector(text):
     # Metni modele göre tokenize et ve vektör temsilini al
@@ -22,7 +24,6 @@ def get_vector(text):
         inputs = {k: v.cuda() for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)
-    # Sonuçları CPU'ya geri taşı ve numpy array'ine çevir
     return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
 
 # Veri setini yükle
@@ -45,7 +46,7 @@ top5_success = 0
 for _, row in sample_questions.iterrows():
     question_vector = row['soru_vektor']
     similarities = df.apply(lambda x: cosine_similarity(
-        question_vector.reshape(1, -1), x['cevap_vektor'].reshape(1, -1))[0][0], axis=1)
+        question_vector, x['cevap_vektor'])[0][0], axis=1)
     sorted_similarities = similarities.sort_values(ascending=False)
 
     # Top1 ve Top5 başarıyı kontrol et
