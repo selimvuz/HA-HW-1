@@ -15,6 +15,7 @@ if torch.cuda.is_available():
 # Tokenizer için padding token ayarla
 tokenizer.pad_token = tokenizer.eos_token
 
+
 def get_vector(text):
     # Metni modele göre tokenize et ve vektör temsilini al
     inputs = tokenizer(text, return_tensors="pt",
@@ -26,6 +27,7 @@ def get_vector(text):
         outputs = model(**inputs)
     return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
 
+
 # Veri setini yükle
 df = pd.read_csv('dataset/instructions.csv', index_col=0)
 
@@ -34,16 +36,23 @@ df['soru'] = df.apply(lambda row: row['talimat'] + (' ' +
                       row['giriş'] if pd.notnull(row['giriş']) else ''), axis=1)
 
 # Sorular ve cevaplar için vektör temsillerini al
-df['soru_vektor'] = df['soru'].apply(lambda x: get_vector(x))
-df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
+print("Vektör temsilleri hesaplanıyor...")
+total = len(df)
+for i, (index, row) in enumerate(df.iterrows(), start=1):
+    df.at[index, 'soru_vektor'] = get_vector(row['soru'])
+    df.at[index, 'cevap_vektor'] = get_vector(row['çıktı'])
+    print(f"\r{i}/{total} işleniyor...", end='')
+
+print("\nİşleme tamamlandı.")
 
 # Rastgele 1000 soru seç
 sample_questions = df.sample(n=1000, random_state=42)
+print("Örnek sorular seçiliyor...")
 
 top1_success = 0
 top5_success = 0
 
-for _, row in sample_questions.iterrows():
+for i, (_, row) in enumerate(sample_questions.iterrows(), start=1):
     question_vector = row['soru_vektor']
     similarities = df.apply(lambda x: cosine_similarity(
         question_vector, x['cevap_vektor'])[0][0], axis=1)
@@ -54,6 +63,7 @@ for _, row in sample_questions.iterrows():
         top1_success += 1
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
+    print(f"\r{i}/1000 değerlendiriliyor...", end='')
 
 print(f"Top1 Başarısı: {top1_success / 1000}")
 print(f"Top5 Başarısı: {top5_success / 1000}")
