@@ -4,19 +4,24 @@ from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer, AutoModel
 import torch
 
+N = 1
+M = 1
+
 # Hugging Face modelini yükle
+print("Model yükleniyor...")
 tokenizer = AutoTokenizer.from_pretrained("ytu-ce-cosmos/turkish-gpt2-large")
 model = AutoModel.from_pretrained("ytu-ce-cosmos/turkish-gpt2-large")
 
 # CUDA kullanılabilirse modeli GPU'ya taşı
 if torch.cuda.is_available():
     model = model.cuda()
+    print("Model GPU'ya taşındı.")
 
 # Tokenizer için padding token ayarla
 tokenizer.pad_token = tokenizer.eos_token
 
-
 def get_vector(text):
+    global N
     # Metni modele göre tokenize et ve vektör temsilini al
     inputs = tokenizer(text, return_tensors="pt",
                        padding=True, truncation=True, max_length=512)
@@ -25,34 +30,35 @@ def get_vector(text):
         inputs = {k: v.cuda() for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)
+    print(f"{N}/103.126 metin vektöre dönüştürüldü.")
+    N += 1
     return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
 
-
 # Veri setini yükle
+print("Veri kümesi yükleniyor...")
 df = pd.read_csv('dataset/instructions.csv', index_col=0)
 
+print("Talimat ve girişler birleştiriliyor...")
 # Talimat ve girişleri birleştir
 df['soru'] = df.apply(lambda row: row['talimat'] + (' ' +
                       row['giriş'] if pd.notnull(row['giriş']) else ''), axis=1)
 
 # Sorular ve cevaplar için vektör temsillerini al
-print("Vektör temsilleri hesaplanıyor...")
-total = len(df)
-for i, (index, row) in enumerate(df.iterrows(), start=1):
-    df.at[index, 'soru_vektor'] = get_vector(row['soru'])
-    df.at[index, 'cevap_vektor'] = get_vector(row['çıktı'])
-    print(f"\r{i}/{total} işleniyor...", end='')
-
-print("\nİşleme tamamlandı.")
+print("Vektör temsilleri alınıyor...")
+df['soru_vektor'] = df['soru'].apply(lambda x: get_vector(x))
+df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
 
 # Rastgele 1000 soru seç
+print("Rastgele 1000 soru seçiliyor...")
 sample_questions = df.sample(n=1000, random_state=42)
-print("Örnek sorular seçiliyor...")
 
+print("Değerlendirme yapılıyor.")
 top1_success = 0
 top5_success = 0
 
-for i, (_, row) in enumerate(sample_questions.iterrows(), start=1):
+for _, row in sample_questions.iterrows():
+    print(f"{M}/51.562 kosinüs benzerliği hesaplanıyor...")
+    M += 1
     question_vector = row['soru_vektor']
     similarities = df.apply(lambda x: cosine_similarity(
         question_vector, x['cevap_vektor'])[0][0], axis=1)
@@ -63,7 +69,6 @@ for i, (_, row) in enumerate(sample_questions.iterrows(), start=1):
         top1_success += 1
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
-    print(f"\r{i}/1000 değerlendiriliyor...", end='')
 
 print(f"Top1 Başarısı: {top1_success / 1000}")
 print(f"Top5 Başarısı: {top5_success / 1000}")
