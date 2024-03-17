@@ -27,7 +27,7 @@ def get_vector(text):
     return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
 
 # Veri setini yükle
-df = pd.read_csv('dataset/instructions.csv', index_col=0)
+df = pd.read_csv('../dataset/instructions.csv', index_col=0)
 
 # Talimat ve girişleri birleştir
 df['soru'] = df.apply(lambda row: row['talimat'] + (' ' +
