@@ -6,8 +6,8 @@ import torch
 
 # Hugging Face BERT modelini yükle
 tokenizer = AutoTokenizer.from_pretrained(
-    "ytu-ce-cosmos/turkish-medium-bert-uncased")
-model = AutoModel.from_pretrained("ytu-ce-cosmos/turkish-medium-bert-uncased")
+    "ytu-ce-cosmos/turkish-base-bert-uncased")
+model = AutoModel.from_pretrained("ytu-ce-cosmos/turkish-base-bert-uncased")
 
 # CUDA kullanılabilirse modeli GPU'ya taşı
 if torch.cuda.is_available():
@@ -37,15 +37,15 @@ df['soru_vektor'] = df['soru'].apply(lambda x: get_vector(x))
 df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
 
 # Rastgele 1000 soru seç
-sample_questions = df.sample(n=1000, random_state=42)
+sample_answers = df.sample(n=1000, random_state=42)
 
 top1_success = 0
 top5_success = 0
 
-for _, row in sample_questions.iterrows():
-    question_vector = row['soru_vektor']
+for _, row in sample_answers.iterrows():
+    answer_vector = row['cevap_vektor']
     similarities = df.apply(lambda x: cosine_similarity(
-        question_vector.reshape(1, -1), x['cevap_vektor'].reshape(1, -1))[0][0], axis=1)
+        answer_vector.reshape(1, -1), x['soru_vektor'].reshape(1, -1))[0][0], axis=1)
     sorted_similarities = similarities.sort_values(ascending=False)
 
     # Top1 ve Top5 başarıyı kontrol et
