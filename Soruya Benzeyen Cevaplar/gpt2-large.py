@@ -57,7 +57,7 @@ top1_success = 0
 top5_success = 0
 
 for _, row in sample_questions.iterrows():
-    print(f"{M}/51.562 kosinüs benzerliği hesaplanıyor...")
+    print(f"{M}/1000 kosinüs benzerliği hesaplanıyor...")
     M += 1
     question_vector = row['soru_vektor']
     similarities = df.apply(lambda x: cosine_similarity(
