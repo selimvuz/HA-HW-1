@@ -36,7 +36,7 @@ def get_vector(text):
 
 # Veri setini yükle
 print("Veri kümesi yükleniyor...")
-df = pd.read_csv('dataset/instructions.csv', index_col=0)
+df = pd.read_csv('../dataset/instructions.csv', index_col=0)
 
 print("Talimat ve girişler birleştiriliyor...")
 # Talimat ve girişleri birleştir
