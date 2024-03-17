@@ -70,5 +70,5 @@ for _, row in sample_answers.iterrows():
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
 
-print(f"Top1 Başarısı: {top1_success / len(df)}")
-print(f"Top5 Başarısı: {top5_success / len(df)}")
+print(f"Top1 Başarısı: {top1_success / 1000}")
+print(f"Top5 Başarısı: {top5_success / 1000}")
