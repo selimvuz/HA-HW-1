@@ -20,6 +20,7 @@ if torch.cuda.is_available():
 # Tokenizer için padding token ayarla
 tokenizer.pad_token = tokenizer.eos_token
 
+
 def get_vector(text):
     global N
     # Metni modele göre tokenize et ve vektör temsilini al
@@ -33,6 +34,7 @@ def get_vector(text):
     print(f"{N}/103.126 metin vektöre dönüştürüldü.")
     N += 1
     return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+
 
 # Veri setini yükle
 print("Veri kümesi yükleniyor...")
@@ -50,7 +52,8 @@ df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
 
 # Rastgele 1000 soru seç
 print("Rastgele 1000 soru seçiliyor...")
-sample_questions = df.sample(n=1000, random_state=42)
+sample_questions = df.iloc[:1000]
+# df.sample(n=1000, random_state=42)
 
 print("Değerlendirme yapılıyor.")
 top1_success = 0
@@ -70,5 +73,6 @@ for _, row in sample_questions.iterrows():
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
 
+print("GPT2 Large:")
 print(f"Top1 Başarısı: {top1_success / 1000}")
 print(f"Top5 Başarısı: {top5_success / 1000}")
