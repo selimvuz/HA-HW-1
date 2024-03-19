@@ -66,6 +66,6 @@ for _, row in sample_questions.iterrows():
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
 
-print("Small BERT")
+print("Sorudan Cevap Tahmini - Small BERT")
 print(f"Top1 Başarısı: {top1_success / 1000}")
 print(f"Top5 Başarısı: {top5_success / 1000}")

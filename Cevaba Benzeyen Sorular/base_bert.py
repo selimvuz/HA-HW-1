@@ -37,7 +37,8 @@ df['soru_vektor'] = df['soru'].apply(lambda x: get_vector(x))
 df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
 
 # Rastgele 1000 soru seç
-sample_answers = df.sample(n=1000, random_state=42)
+sample_answers = df.iloc[:1000]
+# df.sample(n=1000, random_state=42)
 
 top1_success = 0
 top5_success = 0
@@ -54,5 +55,6 @@ for _, row in sample_answers.iterrows():
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
 
+print("Cevaptan Soru Tahmini - Base BERT")
 print(f"Top1 Başarısı: {top1_success / 1000}")
 print(f"Top5 Başarısı: {top5_success / 1000}")

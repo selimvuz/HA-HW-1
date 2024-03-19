@@ -13,6 +13,7 @@ model = AutoModel.from_pretrained("ytu-ce-cosmos/turkish-small-bert-uncased")
 if torch.cuda.is_available():
     model = model.cuda()
 
+
 def get_vector(text):
     # Metni modele göre tokenize et ve vektör temsilini al
     inputs = tokenizer(text, return_tensors="pt",
@@ -24,6 +25,7 @@ def get_vector(text):
         outputs = model(**inputs)
     # Sonuçları CPU'ya geri taşı ve numpy array'ine çevir
     return outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+
 
 # Veri setini yükle
 df = pd.read_csv('../dataset/instructions.csv', index_col=0)
@@ -37,7 +39,8 @@ df['soru_vektor'] = df['soru'].apply(lambda x: get_vector(x))
 df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
 
 # Rastgele 1000 soru seç
-sample_answers = df.sample(n=1000, random_state=42)
+sample_answers = df.iloc[:1000]
+# df.sample(n=1000, random_state=42)
 
 top1_success = 0
 top5_success = 0
@@ -54,5 +57,6 @@ for _, row in sample_answers.iterrows():
     if row.name in sorted_similarities.index[:5]:
         top5_success += 1
 
+print("Cevaptan Soru Tahmini - Small BERT")
 print(f"Top1 Başarısı: {top1_success / 1000}")
 print(f"Top5 Başarısı: {top5_success / 1000}")
