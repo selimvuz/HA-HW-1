@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import pandas as pd
 import numpy as np
 from transformers import AutoTokenizer, AutoModel
 import torch
-
-N = 1
 
 # Hugging Face BERT modelini yükle
 tokenizer = AutoTokenizer.from_pretrained(
@@ -18,7 +17,6 @@ if torch.cuda.is_available():
 
 
 def get_vector(text):
-    global N
     # Metni modele göre tokenize et ve vektör temsilini al
     inputs = tokenizer(text, return_tensors="pt",
                        padding=True, truncation=True, max_length=512)
@@ -27,14 +25,11 @@ def get_vector(text):
         inputs = {k: v.cuda() for k, v in inputs.items()}
     with torch.no_grad():
         outputs = model(**inputs)
-    # Sonuçları CPU'ya geri taşı ve numpy array'ine çevir
-    print(f"{N}/103.126")
-    N += 1
     return outputs.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
 
 
 # Veri setini yükle
-df = pd.read_csv('../dataset/instructions.csv', index_col=0)
+df = pd.read_csv('../dataset/sample.csv', index_col=0)
 
 # Talimat ve girişleri birleştir
 df['soru'] = df.apply(lambda row: row['talimat'] + (' ' +
@@ -44,7 +39,6 @@ df['soru'] = df.apply(lambda row: row['talimat'] + (' ' +
 df['soru_vektor'] = df['soru'].apply(lambda x: get_vector(x))
 df['cevap_vektor'] = df['çıktı'].apply(lambda x: get_vector(x))
 
-
 # Soru ve cevap vektörlerini numpy dizilerine dönüştür
 soru_vektorleri = np.array(df['soru_vektor'].tolist())
 cevap_vektorleri = np.array(df['cevap_vektor'].tolist())
@@ -53,9 +47,13 @@ cevap_vektorleri = np.array(df['cevap_vektor'].tolist())
 vektorler = np.vstack((soru_vektorleri, cevap_vektorleri))
 etiketler = ['Soru'] * len(soru_vektorleri) + ['Cevap'] * len(cevap_vektorleri)
 
+# Önce PCA ile boyut azaltma
+pca = PCA(n_components=30)
+vektorler_pca = pca.fit_transform(vektorler)
+
 # t-SNE ile 2 boyuta indirgeme
-tsne = TSNE(n_components=2, random_state=42, perplexity=70)
-vektorler_2d = tsne.fit_transform(vektorler)
+tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+vektorler_2d = tsne.fit_transform(vektorler_pca)
 
 # Görselleştirme
 plt.figure(figsize=(12, 8))
@@ -63,9 +61,9 @@ colors = {'Soru': 'blue', 'Cevap': 'orange'}
 for etiket in set(etiketler):
     idx = [i for i, t in enumerate(etiketler) if t == etiket]
     plt.scatter(vektorler_2d[idx, 0], vektorler_2d[idx, 1],
-                c=colors[etiket], label=etiket, alpha=0.7)
+                c=colors[etiket], label=etiket, alpha=0.5)
 plt.legend()
-plt.title('Soru/Cevap t-SNE 2D - BERT')
+plt.title('Soru/Cevap PCA -> t-SNE 2D - BERT')
 plt.xlabel('')
 plt.ylabel('')
 plt.show()
