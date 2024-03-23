@@ -29,7 +29,7 @@ def get_vector(text):
 
 
 # Veri setini yükle
-df = pd.read_csv('../dataset/sample.csv', index_col=0)
+df = pd.read_csv('../dataset/instructions.csv', index_col=0)
 
 # Talimat ve girişleri birleştir
 df['soru'] = df.apply(lambda row: row['talimat'] + (' ' +
@@ -48,7 +48,7 @@ vektorler = np.vstack((soru_vektorleri, cevap_vektorleri))
 etiketler = ['Soru'] * len(soru_vektorleri) + ['Cevap'] * len(cevap_vektorleri)
 
 # Önce PCA ile boyut azaltma
-pca = PCA(n_components=30)
+pca = PCA(n_components=50)
 vektorler_pca = pca.fit_transform(vektorler)
 
 # t-SNE ile 2 boyuta indirgeme

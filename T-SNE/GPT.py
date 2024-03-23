@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import pandas as pd
 import numpy as np
@@ -58,19 +59,23 @@ cevap_vektorleri = np.array(df['cevap_vektor'].tolist())
 vektorler = np.vstack((soru_vektorleri, cevap_vektorleri))
 etiketler = ['Soru'] * len(soru_vektorleri) + ['Cevap'] * len(cevap_vektorleri)
 
+# Önce PCA ile boyut azaltma
+pca = PCA(n_components=50)
+vektorler_pca = pca.fit_transform(vektorler)
+
 # t-SNE ile 2 boyuta indirgeme
-tsne = TSNE(n_components=2, random_state=42)
-vektorler_2d = tsne.fit_transform(vektorler)
+tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+vektorler_2d = tsne.fit_transform(vektorler_pca)
 
 # Görselleştirme
 plt.figure(figsize=(12, 8))
-colors = {'Soru': 'green', 'Cevap': 'red'}
+colors = {'Soru': 'blue', 'Cevap': 'orange'}
 for etiket in set(etiketler):
     idx = [i for i, t in enumerate(etiketler) if t == etiket]
     plt.scatter(vektorler_2d[idx, 0], vektorler_2d[idx, 1],
-                c=colors[etiket], label=etiket, alpha=0.7)
+                c=colors[etiket], label=etiket, alpha=0.5)
 plt.legend()
-plt.title('Soru/Cevap t-SNE 2D - GPT')
+plt.title('Soru/Cevap PCA -> t-SNE 2D - GPT2')
 plt.xlabel('')
 plt.ylabel('')
 plt.show()
